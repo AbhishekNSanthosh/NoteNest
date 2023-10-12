@@ -6,7 +6,7 @@ const NoteSchema = new mongoose.Schema({
   title: { type: String, required: true },
   desc: { type: String, required: true },
   isCompleted: { type: Boolean, default: false },
-}, { timestamps: true, versionKey: false, });
+}, { timestamps: true, versionKey: false });
 
 NoteSchema.set('toJSON', {
   transform: function (doc, ret, options) {
