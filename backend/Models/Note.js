@@ -4,10 +4,11 @@ const moment = require('moment')
 const NoteSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Types.ObjectId, ref: 'User' },
   title: { type: String, required: true },
+  desc: { type: String, required: true },
   isCompleted: { type: Boolean, default: false },
 }, { timestamps: true, versionKey: false, });
 
-TodoSchema.set('toJSON', {
+NoteSchema.set('toJSON', {
   transform: function (doc, ret, options) {
     const createdAt = moment(ret.createdAt);
     const updatedAt = moment(ret.updatedAt);
