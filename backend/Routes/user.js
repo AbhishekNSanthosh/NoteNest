@@ -11,7 +11,7 @@ const { verifyToken } = require('../libs/Auth');
 router.get('/', (req, res) => {
     res.send({
         status: 200,
-        message: "Hey, Welcome to NoteNest!"
+        message: "Hey, Welcome to NoteNest! Developed by Abhishek Santhosh."
     })
 })
 
@@ -193,8 +193,8 @@ router.get('/getNotesByTitle', async (req, res) => {
 });
 
 //api to get single note details by id.
-router.get('/getNoteDetailsById', verifyToken, async (req, res) => {
-    const { noteId } = req.query;
+router.get('/getNoteDetailsById/:noteId', verifyToken, async (req, res) => {
+    const { noteId } = req.params;
     try {
         const note = await Note.findOne({ createdBy: req.userId, _id: noteId });
 
@@ -206,7 +206,7 @@ router.get('/getNoteDetailsById', verifyToken, async (req, res) => {
             })
         }
         return res.status(200).json({
-            status: 200,
+            statusCode: 200,
             status: "SUCCESS",
             data: note,
             accessToken: req.accessToken
@@ -219,5 +219,42 @@ router.get('/getNoteDetailsById', verifyToken, async (req, res) => {
         })
     }
 })
+
+//api to edit the note created by noteId
+router.put('/updateNoteById/:noteId', verifyToken, async (req, res) => {
+    const noteId = req.params.noteId;
+    const { title, desc } = req.body;
+    const userId = req.userId;
+
+    try {
+        const note = await Note.findOne({ _id: noteId, createdBy: userId });
+
+        if (!note) {
+            return res.status(401).json({
+                statusCode: 401,
+                status: "FAILURE",
+                message: 'This note does not belong to the you!'
+            });
+        }
+        // Update the note if it belongs to the user
+        note.title = title;
+        note.desc = desc;
+
+        const updatedNote = await note.save();
+        res.status(200).json({
+            statusCode: 200,
+            status: "SUCCESS",
+            message: "Hey, here is your note details!",
+            data: updatedNote,
+            accessToken:req.accessToken
+        });
+    } catch (err) {
+        res.status(500).json({
+            statusCode: 500,
+            status: "FAILURE",
+            message: err
+        });
+    }
+});
 
 module.exports = router;

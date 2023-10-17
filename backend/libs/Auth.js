@@ -19,7 +19,6 @@ const verifyToken = async (req, res, next) => {
     }
     try {
         const decoded = jwt.verify(token, 'NOTENEST');
-        // console.log('Token is valid & the username: ', decoded.username, ", id is:", decoded.userId);
         const user = await User.findOne({ _id: decoded.userId })
 
         if (decoded.username !== user?.username) {
