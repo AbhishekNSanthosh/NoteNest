@@ -11,11 +11,11 @@ import AllNotes from "./modules/Dashboard/modules/AllNotes/AllNotes";
 function App() {
   const router = createBrowserRouter([
     {
-      path: "/dashboard",
+      path: "/",
       element: <Layout />,
       children: [
         {
-          path:'/dashboard',
+          path:'/',
           element:<AllNotes/> 
         }
       ]
