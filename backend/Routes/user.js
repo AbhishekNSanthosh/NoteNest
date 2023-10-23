@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
 //api to get user details
 router.get('/info', verifyToken, async (req, res) => {
     const user = await User.findOne({ _id: req.userId });
-    const { password, ...userInfo } = user._doc
+    const { password, loginAttempts, lockUntil, ...userInfo } = user._doc
     if (!user) {
         return res.status(404).json({ message: 'User not found' });
     }
@@ -287,7 +287,7 @@ router.put('/updateNoteById/:noteId', verifyToken, async (req, res) => {
             accessToken: req.accessToken
         });
     } catch (err) {
-        res.status(500).json({
+        return res.status(500).json({
             statusCode: 500,
             status: "FAILURE",
             message: err
@@ -318,7 +318,11 @@ router.put('/archive/:id', verifyToken, async (req, res) => {
             accessToken: req.accessToken
         });
     } catch (error) {
-
+        return res.status(500).json({
+            statusCode: 500,
+            status: "FAILURE",
+            message: error.message
+        });
     }
 })
 
@@ -345,7 +349,83 @@ router.put('/unarchive/:id', verifyToken, async (req, res) => {
             accessToken: req.accessToken
         });
     } catch (error) {
+        return res.status(500).json({
+            statusCode: 500,
+            status: "FAILURE",
+            message: error.message
+        });
+    }
+})
 
+//api to get notes based on tags
+router.get('/getTaggedNotes', verifyToken, async (req, res) => {
+    const { tags } = req.query;
+    try {
+        if (!tags) {
+            return res.status(400).json({
+                statusCode: 400,
+                status: "FAILURE",
+                message: 'Tags parameter is required'
+            });
+        }
+        const notes = await Note.find({ tags: { $in: tags } });
+
+        if (notes.length === 0) {
+            return res.status(404).json({
+                statusCode: 404,
+                status: "FAILURE",
+                message: "No notes found with the given tags"
+            });
+        }
+        return res.status(500).json({
+            statusCode: 500,
+            status: "FAILURE",
+            data: notes,
+            message: error.message
+        });
+    } catch (error) {
+        return res.status(500).json({
+            statusCode: 500,
+            status: "FAILURE",
+            message: error.message
+        });
+    }
+})
+
+//api to delete a note
+router.delete('/removeNoteById', verifyToken, async (req, res) => {
+    const { noteId } = req.body;
+    try {
+        const note = await Note.findOneAndRemove({ _id: noteId })
+        if (!note) {
+            return res.status(404).json({
+                statusCode: 404,
+                status: "FAILURE",
+                message: "No notes found."
+            });
+        }
+
+        if (note.createdBy === req.userId) {
+            return res.status(401).json({
+                statusCode: 401,
+                status: "FAILURE",
+                message: "Access denied!."
+            });
+        }
+
+        await Note.findByIdAndRemove(noteId)
+        return res.status(200).json({
+            statusCode: 200,
+            status: "SUCCESS",
+            message: "Note has been deleted successfully.",
+            accessToken: req.accessToken
+        });
+    } catch (error) {
+        return res.status(500).json({
+            statusCode: 500,
+            status: "FAILURE",
+            message: error.message
+        });
     }
 })
 
