@@ -6,6 +6,13 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const Note = require('../Models/Note');
 const { verifyToken } = require('../libs/Auth');
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 3, // 3 attempts
+    message: 'Too many login attempts. Your account is locked for 10 minutes.',
+});
 
 //Test api
 router.get('/', (req, res) => {
@@ -14,6 +21,23 @@ router.get('/', (req, res) => {
         message: "Hey, Welcome to NoteNest! Developed by Abhishek Santhosh."
     })
 })
+
+//api to get user details
+router.get('/info', verifyToken, async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+    const { password, ...userInfo } = user._doc
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({
+        statusCode: 200,
+        status: 'SUCCESS',
+        message: "Hey, here's your data.",
+        data: userInfo,
+        accessToken: req.accessToken
+    })
+});
 
 //api to register a user 
 router.post('/register', async (req, res, next) => {
@@ -74,7 +98,7 @@ router.post('/register', async (req, res, next) => {
 
 
 //api to login a user
-router.post('/login', async (req, res) => {
+router.post('/login', limiter, async (req, res) => {
     const { username, password } = req.body;
 
     try {
@@ -93,7 +117,6 @@ router.post('/login', async (req, res) => {
             });
         }
         const user = await User.findOne({ username });
-
         if (!user) {
             return res.status(401).json({
                 statusCode: 401,
@@ -101,26 +124,40 @@ router.post('/login', async (req, res) => {
                 message: 'Authentication failed. User not found.'
             });
         }
-
-        if (bcrypt.compareSync(password, user.password)) {
-            const token = jwt.sign({
-                username: user.username, userId: user._id
-            }, "NOTENEST", { expiresIn: '1h' });
-
-            return res.status(200).json({
-                statusCode: 200,
-                status: 'SUCCESS',
-                greetings: `Welcome ${user.username.toUpperCase()} to NoteNest!!!`,
-                accessToken: token,
-                message: 'Authentication successful',
-            });
-        } else {
-            return res.status(401).json({
-                statusCode: 401,
-                status: "FAILURE",
-                message: 'Authentication failed. Wrong password.'
-            });
+        if (user.lockUntil > new Date()) {
+            return res.status(401).json({ message: 'Account is locked. Try again later.' });
         }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            user.loginAttempts += 1;
+
+            if (user.loginAttempts >= 3) {
+                user.lockUntil = new Date(Date.now() + 10 * 60 * 1000); // Lock for 10 minutes
+            }
+
+            await user.save();
+
+            return res.status(401).json({ message: 'Invalid username or password' });
+        }
+
+        user.loginAttempts = 0;
+        user.lockUntil = new Date(0);
+        await user.save();
+
+        const token = jwt.sign({
+            username: user.username, userId: user._id
+        }, "NOTENEST", { expiresIn: '1h' });
+
+        return res.status(200).json({
+            statusCode: 200,
+            status: 'SUCCESS',
+            greetings: `Welcome ${user.username.toUpperCase()} to NoteNest!!!`,
+            accessToken: token,
+            message: 'Authentication successful',
+        });
+
     } catch (err) {
         return res.status(500).json({
             statusCode: 500,
@@ -223,7 +260,7 @@ router.get('/getNoteDetailsById/:noteId', verifyToken, async (req, res) => {
 //api to edit the note created by noteId
 router.put('/updateNoteById/:noteId', verifyToken, async (req, res) => {
     const noteId = req.params.noteId;
-    const { title, desc } = req.body;
+    const { title, desc, tags } = req.body;
     const userId = req.userId;
 
     try {
@@ -239,14 +276,15 @@ router.put('/updateNoteById/:noteId', verifyToken, async (req, res) => {
         // Update the note if it belongs to the user
         note.title = title;
         note.desc = desc;
+        note.tags = tags;
 
         const updatedNote = await note.save();
-        res.status(200).json({
+        return res.status(200).json({
             statusCode: 200,
             status: "SUCCESS",
             message: "Hey, here is your note details!",
             data: updatedNote,
-            accessToken:req.accessToken
+            accessToken: req.accessToken
         });
     } catch (err) {
         res.status(500).json({
@@ -256,5 +294,59 @@ router.put('/updateNoteById/:noteId', verifyToken, async (req, res) => {
         });
     }
 });
+
+//api to get archive a note
+router.put('/archive/:id', verifyToken, async (req, res) => {
+    const noteId = req.params.id;
+    try {
+        const note = await Note.findOne({ _id: noteId });
+        if (note.archived === true) {
+            return res.status(400).json({
+                statusCode: 400,
+                status: "FAILURE",
+                message: "Note is already archived.",
+                accessToken: req.accessToken
+            });
+        }
+        note.archived = true
+        const updatedNote = await note.save();
+        return res.status(200).json({
+            statusCode: 200,
+            status: "SUCCESS",
+            message: "Note has archived.",
+            data: updatedNote,
+            accessToken: req.accessToken
+        });
+    } catch (error) {
+
+    }
+})
+
+//api to unarchive note
+router.put('/unarchive/:id', verifyToken, async (req, res) => {
+    const noteId = req.params.id;
+    try {
+        const note = await Note.findOne({ _id: noteId });
+        if (note.archived === false) {
+            return res.status(400).json({
+                statusCode: 400,
+                status: "FAILURE",
+                message: "Note is already unarchived.",
+                accessToken: req.accessToken
+            });
+        }
+        note.archived = false
+        const updatedNote = await note.save();
+        return res.status(200).json({
+            statusCode: 200,
+            status: "SUCCESS",
+            message: "Note has unarchived.",
+            data: updatedNote,
+            accessToken: req.accessToken
+        });
+    } catch (error) {
+
+    }
+})
 
 module.exports = router;

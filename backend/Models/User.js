@@ -4,7 +4,9 @@ const moment = require('moment')
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
-}, { timestamps: true ,versionKey: false});
+  loginAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date, default: new Date(0) },
+}, { timestamps: true, versionKey: false });
 
 userSchema.set('toJSON', {
   transform: function (doc, ret, options) {

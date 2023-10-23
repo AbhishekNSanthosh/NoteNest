@@ -3,9 +3,10 @@ const moment = require('moment')
 
 const NoteSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Types.ObjectId, ref: 'User' },
-  title: { type: String, required: true },
+  title: { type: [String], required: true },
+  tags: [String],
   desc: { type: String, required: true },
-  isCompleted: { type: Boolean, default: false },
+  archived: { type: Boolean, default: false },
 }, { timestamps: true, versionKey: false });
 
 NoteSchema.set('toJSON', {

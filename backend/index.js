@@ -4,13 +4,20 @@ const mongoose = require('mongoose');
 const userRoute = require('./Routes/user.js')
 const cors = require('cors');
 const { json } = require('body-parser');
+const rateLimit = require('express-rate-limit');
 dotenv.config();
+
+const limiter = rateLimit({
+    windowMs: 60000, // 1 second
+    max: 1, // 1 request per second
+    message: 'Rate limit exceeded. Please try again later.',
+  });
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use("/api/v1/user", userRoute);
+app.use("/api/v1/user", userRoute,limiter);
 
 const connectDb = () => {
     mongoose
