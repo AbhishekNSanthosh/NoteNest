@@ -16,7 +16,7 @@ function App() {
       children: [
         {
           path:'/dashboard',
-          element:<AllNotes/>
+          element:<AllNotes/> 
         }
       ]
     },
