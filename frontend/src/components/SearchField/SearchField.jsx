@@ -3,7 +3,9 @@ import styles from './SearchField.module.css'
 
 const SearchField = () => {
     return (
-        <div>SearchField</div>
+        <div>
+            <input type="text" placeholder='Search' className={styles.inputField} />
+        </div>
     )
 }
 

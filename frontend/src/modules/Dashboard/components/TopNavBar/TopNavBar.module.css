@@ -2,17 +2,39 @@
     height: 13%;
     width: 100%;
     display: flex;
+    justify-content: center;
     align-items: center;
-    background-color: red;
 }
 
 .topLeft {
     flex: 6;
-    padding: 0 3rem;
+    padding: 0 1rem 0 3rem;
 }
 
 .topRight {
     flex: 6;
-    background-color: rebeccapurple;
-    padding: 0 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    padding: 0 3rem 0 1rem;
+    gap: 1rem;
+}
+
+.userBox {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+}
+
+.username {
+    font-size: 1.34rem;
+    color: #00D33B;
+    font-weight: 600;
+}
+
+.userLogo {
+    height: 3rem;
+    width: 3rem;
+    border: 3px solid rgb(0, 255, 0);
+    border-radius: 50%;
 }

@@ -9,7 +9,12 @@ const TopNavBar = () => {
         <SearchField />
       </div>
       <div className={styles.topRight}>
-s
+        <div className={styles.userBox}>
+          <span className={styles.username}>Hello, Abhishek Santhosh 👋</span>
+        </div>
+        <div className={styles.userBox}>
+          <img src="https://cloudfront-us-east-2.images.arcpublishing.com/reuters/YFUHMKIBVNKZFBGRC26PMCJURQ.jpg" alt="" className={styles.userLogo} />
+        </div>
       </div>
     </div>
   )
