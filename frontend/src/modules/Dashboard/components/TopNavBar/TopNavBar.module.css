@@ -1,5 +1,18 @@
 .topNavBar {
     height: 13%;
     width: 100%;
-    background-color: #fff;
+    display: flex;
+    align-items: center;
+    background-color: red;
+}
+
+.topLeft {
+    flex: 6;
+    padding: 0 3rem;
+}
+
+.topRight {
+    flex: 6;
+    background-color: rebeccapurple;
+    padding: 0 3rem;
 }
