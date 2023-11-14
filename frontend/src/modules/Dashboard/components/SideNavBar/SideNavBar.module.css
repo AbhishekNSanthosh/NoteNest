@@ -16,6 +16,7 @@
 
 .logo {
     margin-right: 1rem;
+    height: 2.6rem;
 }
 
 .logoWrap {
@@ -142,6 +143,6 @@
 }
 
 .credits {
-    font-size: 0.4rem;
+    font-size: 0.3rem;
     color: #9297AA;
 }

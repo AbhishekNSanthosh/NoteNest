@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const Note = require('../Models/Note');
 const { verifyToken } = require('../libs/Auth');
 const rateLimit = require('express-rate-limit');
+const nodemailer = require('nodemailer');
 
 const limiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 minutes
@@ -14,8 +15,41 @@ const limiter = rateLimit({
     message: 'Too many login attempts. Your account is locked for 10 minutes.',
 });
 
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: 'abhisheksanthosh404@gmail.com',
+        pass: 'jraqxhekzzgljvou',
+    },
+});
+
 //Test api
 router.get('/', (req, res) => {
+    const mailOptions = {
+        from: 'abhisheksanthosh404@gmail.com',
+        to: 'abhisheksanthoshofficial19@gmail.com',
+        subject: 'Welcome to NoteNest - Your Note Management Companion',
+        text: 'Hello there!\n\nWelcome to NoteNest, your new destination for effortless note management and collaboration.',
+        html: `<p>Hello there!</p>
+               <p>Welcome to NoteNest, your new destination for effortless note management and collaboration.</p>
+               <p>NoteNest is a web application designed to simplify the way you store and manage your notes online. With NoteNest, you can:</p>
+               <ul>
+                 <li>Create and store notes securely in one place.</li>
+                 <li>Collaborate seamlessly with your team or colleagues.</li>
+                 <li>Organize your information in a user-friendly and efficient manner.</li>
+                 <li>Foster productivity and teamwork through easy information sharing.</li>
+               </ul>
+               <p>We're thrilled to have you on board! Your journey with NoteNest begins now. Get started by logging into your account and experience the future of note management.</p>
+               <p>If you have any questions or need assistance, don't hesitate to contact our friendly support team. We're here to help you make the most of NoteNest.</p>
+               <p>Thank you for choosing NoteNest. Let's make note-taking a breeze!</p>`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.log('Error:', error);
+        } else {
+            console.log('Email sent:', info.response);
+        }
+    });
     res.send({
         status: 200,
         message: "Hey, Welcome to NoteNest! Developed by Abhishek Santhosh."
@@ -125,7 +159,11 @@ router.post('/login', limiter, async (req, res) => {
             });
         }
         if (user.lockUntil > new Date()) {
-            return res.status(401).json({ message: 'Account is locked. Try again later.' });
+            return res.status(401).json({
+                statusCode: 401,
+                status: 'FAILURE',
+                message: 'Account is locked. Try again later.'
+            });
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -405,7 +443,7 @@ router.delete('/removeNoteById', verifyToken, async (req, res) => {
             });
         }
 
-        if (note.createdBy === req.userId) {
+        if (note.createdBy != req.userId) {
             return res.status(401).json({
                 statusCode: 401,
                 status: "FAILURE",
